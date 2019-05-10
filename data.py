@@ -3,7 +3,7 @@ import pandas as pd
 import math
 import openpyxl
 
-class read_Data:
+class data_operations:
     def __init__(self):
         self.header = []
         self.content = []
@@ -13,6 +13,7 @@ class read_Data:
         self.string_indexes = []
         self.open_response = []
         self.open_response_indexes = []
+        self.label_encoder = {}
         self.find_open_source()
 
     def read_csv(self):
@@ -95,10 +96,9 @@ class read_Data:
         # print(len(self.digital_indexes)+len(self.string_indexes)+len(self.open_response_indexes))
 
         #label encoder
-        label_encoder = {}
         for i in range(len(self.string_indexes)):
-            if self.string_indexes[i] not in label_encoder:
-                label_encoder[str(self.string_indexes[i])] = []
+            if self.string_indexes[i] not in self.label_encoder:
+                self.label_encoder[str(self.string_indexes[i])] = []
         # print(label_encoder)
         for i in range(len(self.string_indexes)):
             index = self.string_indexes[i]
@@ -106,13 +106,6 @@ class read_Data:
                 if self.content[j][index] == "NA":
                     self.content[j][index] = -1
                     continue
-                if self.content[j][index] not in label_encoder[str(index)]:
-                    label_encoder[str(index)].append(self.content[j][index])
-                self.content[j][index] = label_encoder[str(index)].index(self.content[j][index])
-        print(label_encoder['269'])
-
-
-
-a = read_Data()
-a.read_csv()
-a.preprocess_data()
+                if self.content[j][index] not in self.label_encoder[str(index)]:
+                    self.label_encoder[str(index)].append(self.content[j][index])
+                self.content[j][index] = self.label_encoder[str(index)].index(self.content[j][index])
