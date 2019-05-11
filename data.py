@@ -206,3 +206,88 @@ class data_operations:
             writer  = csv.writer(csvfile)
             for row in self.content:
                 writer.writerow(row)
+
+    def generate_realistic(self):
+        self.read_csv()
+        del_indexes = []
+        for i in range(len(self.content)):
+            na_counter = 0
+            for j in range(self.col):
+                if self.content[i][j] == "NA":
+                    na_counter += 1
+            if na_counter > self.na_threshold:
+                del_indexes.append(i)
+        for i in range(len(del_indexes)):
+            del self.content[del_indexes[i]]
+            for j in range(len(del_indexes)):
+                del_indexes[j] -= 1
+        #open response index
+        for i in range(self.col):
+            if self.header[i] in self.open_response:
+                self.open_response_indexes.append(i)
+        #transform int and float data
+        transform_vol_counter = [0] * self.col
+        for i in range(len(self.content)):
+            for j in range(self.col):
+                if j in self.open_response_indexes:
+                    continue
+                if self.content[i][j] == "NA":
+                    continue
+                try:
+                    self.content[i][j] = int(self.content[i][j])
+                    transform_vol_counter[j] += 1
+                except ValueError:
+                    try:
+                        self.content[i][j] = float(self.content[i][j])
+                        transform_vol_counter[j] += 1
+                    except ValueError:
+                        pass
+        # print(transform_vol_counter)
+        for i in range(self.col):
+            if i in self.open_response_indexes:
+                continue
+            if transform_vol_counter[i] > 1000:
+                self.digital_indexes.append(i)
+            else:
+                self.string_indexes.append(i)
+        for i in range(len(self.content)):
+            for j in range(self.col):
+                if j in self.open_response_indexes:
+                    continue
+                if j in self.digital_indexes:
+                    if not isinstance(self.content[i][j], (int, float)):
+                        self.content[i][j] = -1
+                elif j in self.string_indexes:
+                    if not isinstance(self.content[i][j], str):
+                        self.content[i][j] = str(self.content[i][j])
+
+    def compare_real(self):
+        string_indexes = copy.deepcopy(self.string_indexes)
+        open_response_indexes = copy.deepcopy(self.open_response_indexes)
+        for i in range(len(open_response_indexes)):
+            index = open_response_indexes[i]
+            for j in range(len(string_indexes)):
+                if string_indexes[j] > index:
+                    string_indexes[j] -= 1
+            for k in range(len(open_response_indexes)):
+                open_response_indexes[k] -= 1
+        for i in range(len(string_indexes)):
+            values_counter = len(self.label_encoder[str(self.string_indexes[i])])
+            index = string_indexes[i]
+            for j in range(len(self.content)):
+                choose_number = self.content[j][index]
+                if (choose_number < 1) or (choose_number > values_counter):
+                    if values_counter == 0:
+                        self.content[j][index] = "NA"
+                    else:
+                        random_pick = random.randint(0, values_counter - 1)
+                        self.content[j][index] = self.label_encoder[str(self.string_indexes[i])][random_pick]
+                else:
+                    self.content[j][index] = self.label_encoder[str(self.string_indexes[i])][choose_number - 1]
+        for i in range(len(open_response_indexes)):
+            index = open_response_indexes[i]
+            for j in range(len(self.header)):
+                if j == index:
+                    del self.header[j]
+            for k in range(len(open_response_indexes)):
+                open_response_indexes[k] -= 1

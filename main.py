@@ -21,3 +21,6 @@ if __name__ == "__main__":
         my_data.combine_train_test(index, x_train, y_train, x_test, y_prediction)
     my_data.reconvert_string()
     my_data.rewrite_file()
+
+    # my_data.generate_realistic()
+    # my_data.compare_real()
