@@ -7,6 +7,8 @@ import copy
 
 class LinearRegression():
     def __init__(self):
+        self.m = 0
+        self.col = 0
         self.w = []
         self.b = 0
 
@@ -49,11 +51,10 @@ class LinearRegression():
         reg.fit(x, y)
         #print(reg.n_iter_)
         #print(reg.coef_)
-        vol = len(x[0])
-        self.w = reg.coef_.reshape(vol, 1)
+        self.w = reg.coef_.reshape(self.col, 1)
         total = 0
         for i in range(len(y)):
-            total += y[i] - np.dot(x[i].reshape(1, vol), self.w)
+            total += y[i] - np.dot(x[i].reshape(1, self.col), self.w)
         self.b = total / len(y)
         print('bias is :', self.b)
         print('weights are :', self.w.T)
@@ -71,8 +72,15 @@ class LinearRegression():
         return total / len(y)
 
     def predict(self, x):
-        vol = len(x[0])
-        return np.dot(x.reshape(1, vol), self.w) + self.b
+        return np.dot(x.reshape(1, self.col), self.w) + self.b
+
+    def predict_all(self, x):
+        y = []
+        for i in range(len(x)):
+            y_predict = self.predict(np.asarray(x[i])).tolist()[0][0]
+            y_predict = int(y_predict)
+            y.append(y_predict)
+        return y
 
     def error(self, x, y):
         total = 0
@@ -82,8 +90,9 @@ class LinearRegression():
         return total / len(y)
 
     def lassoRidge(self, x, y, lamda):
-        reg = linear_model.Lasso(alpha = 0.00001)
-        reg.fit(x, y)
+        x_, y_ = self.transform_data(x, y)
+        reg = linear_model.Lasso(alpha = 0.001)
+        reg.fit(x_, y_)
         #print(reg.n_iter_)
         weights = abs(reg.coef_)
         weights /= sum(weights)
@@ -94,30 +103,50 @@ class LinearRegression():
         index_2 = copy.deepcopy(index)
         #print(index)
         del_len = len(index)
-        new_x = x.tolist()
+        new_x = x_.tolist()
         for i in range(del_len):
             for item in new_x:
                 del item[index[i]]
             for j in range(del_len):
                 index[j] -= 1
         new_x = np.asarray(new_x)
-        vol = len(x[0])
-        final_x = np.zeros((1000, vol - del_len))
-        for i in range(1000):
-            for j in range(vol - del_len):
+        final_x = np.zeros((self.m, self.col + 1 - del_len))
+        for i in range(self.m):
+            for j in range(self.col + 1 - del_len):
                 if j == 0:
                     final_x[i][0] = 1
                 else:
                     final_x[i][j] = new_x[i][j - 1]
-        self.ridge(final_x, y, lamda)
-        weights = self.w.tolist()
+        self.ridge(final_x, y_, lamda)
+        try:
+            weights = self.w.tolist()
+        except AttributeError:
+            weights = []
+            for i in range(self.col - del_len):
+                weights.append([0])
         for i in range(del_len):
             weights = weights[:index_2[i]] + [[0]] + weights[index_2[i]:]
         transform_w = []
-        for i in range(vol - 1):
+        for i in range(self.col):
             transform_w.append(weights[i][0])
-        self.w = np.asarray(transform_w).reshape(vol - 1, 1)
-        return transform_w, self.b.tolist()[0][0]
+        self.w = np.asarray(transform_w).reshape(self.col, 1)
+        if isinstance(self.b, int):
+            return transform_w, self.b
+        else:
+            return transform_w, self.b.tolist()[0][0]
+
+    def transform_data(self, x, y):
+        self.m = len(x)
+        self.col = len(x[0])
+        # new_x = np.zeros((self.m, self.col))
+        # new_y = np.zeros(self.m)
+        # for i in range(self.m):
+        #     for j in range(self.col):
+        #         new_x[i][j] = x[i][j]
+        #     new_y[i] = y[i]
+        new_x = np.asarray(x)
+        new_y = np.asarray(y)
+        return new_x, new_y
 
 
 # if __name__ == '__main__':
