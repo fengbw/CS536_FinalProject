@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import math
 from sklearn import linear_model
 import copy
+import operator
 
 class LinearRegression():
     def __init__(self):
@@ -148,6 +149,34 @@ class LinearRegression():
         new_y = np.asarray(y)
         return new_x, new_y
 
+class knn:
+    def classify(self, intX, dataSet, labels, k):
+        dataSetSize = dataSet.shape[0]
+        diffMat = np.tile(intX, (dataSetSize, 1)) - dataSet
+        sqdifMax = diffMat**2
+        #caculate distance
+        seqDistances = sqdifMax.sum(axis=1)
+        distances = seqDistances**0.5
+        # print ("distances:",distances)
+        sortDistance = distances.argsort()
+        # print ("sortDistance:",sortDistance)
+        classCount = {}
+        for i in range(k):
+            voteLabel = labels[sortDistance[i]]
+            # print ("the %d voteLabel = %s",i,voteLabel)
+            classCount[voteLabel] = classCount.get(voteLabel,0)+1
+
+        sortedClassCount = sorted(classCount.items(),key = operator.itemgetter(1),reverse = True)
+        # print ("sortedClassCount:",sortedClassCount)
+        return sortedClassCount[0][0]
+
+    def predict(self, intx, dataSet, labels, k):
+        y = []
+        for i in range(len(dataSet)):
+            y_predict = self.classify(intX, dataSet[i], labels, k)
+            y_predict = int(y_predict)
+            y.append(y_predict)
+        return y
 
 # if __name__ == '__main__':
 #     lams = [0.2]
